@@ -67,7 +67,7 @@ class Juego_senias:
         # Inicia un hilo para capturar las letras detectadas por la cámara
         threading.Thread(target=self.procesar_camara, daemon=True).start()
 
-    # Todo LO RELACIONADO CON LA ENTRADA DEL TECLADO  
+    # TODOD LO RELACIONADO CON LA ENTRADA DEL TECLADO  
     def entrada_teclado(self,app):
             app.bind("<Return>",lambda x: self.BotonEnviar())
             app.bind("<Control_R>",lambda x: self.JuegoNuevo())
@@ -115,6 +115,126 @@ class Juego_senias:
             if self.camara_activa:
                 self.video_label.after(0, actualizar_imagen)
     # IMPLEMENTACION RELACIONADO CON EL JUEGO DEL AHORCADO 
+    def JuegoNuevo(self):
+        self.EstamosJugando = True
+        self.ObjetoJuego.nuevojuego()
+        #AÑADIR IMAGEN PARA LA PALABRA
+        self.__ActualizarVista()
+
+    def BotonEnviar(self):
+        if self.EstamosJugando:
+            letra = self.EntradaTexto.cget("text")
+            if letra:
+                self.ObjetoJuego.jugar(letra.upper())
+                if self.ObjetoJuego.getVictoria() or not self.ObjetoJuego.getJugadorEstaVivo():
+                    self.EstamosJugando = False
+                self.__ActualizarVista()
+        else:
+            self.JuegoNuevo()
+        self.EntradaTexto.configure(text="")
+
+    def __ActualizarVista(self):
+        if self.EstamosJugando:
+            # Actualizamos la palabra oculta y las letras usadas
+            letrero=""
+            for x in self.ObjetoJuego.getLetrero(): letrero+=x+" "  
+            self.Texto1.set(letrero)
+            mensaje="Tus jugadas: "
+            for x in self.ObjetoJuego.getLetrasUsadas():mensaje+=x
+            self.Texto2.set(mensaje)
+            #self.Texto1.set(" ".join(self.ObjetoJuego.getLetrero()))
+            #self.Texto2.set("Tus jugadas: " + ", ".join(self.ObjetoJuego.getLetrasUsadas()))
+        else:
+            # Mensajes finales
+            if self.ObjetoJuego.getVictoria():
+                self.Texto1.set("¡Felicidades! Ganaste.")
+            else:
+                self.Texto1.set(f"Lo siento, perdiste. La palabra era: {self.ObjetoJuego.getPalabra()}")
+            self.Texto2.set("")
+        self.__Dibujo() # esto acciona para dibujar el hombrecito
+
+    def titulo(self, app):
+        font_title = ct.CTkFont(family='Consolas', weight='bold', size=25)
+        title = ct.CTkLabel(app, text='JUEGO DEL AHORCADO CON SEÑAS', fg_color='steelblue',
+                            text_color='white', height=30, font=font_title, corner_radius=8)
+        title.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(5, 4), padx=(7, 10))
+    #Interfaz de camara
+    def camara(self, app):
+        self.frame_camara = ct.CTkFrame(master=app)   #, width=680, height = 400
+        self.frame_camara.grid(row=1, column=0, columnspan=2, padx = (14,5), pady=(3,0))
+
+        self.video_frame = ct.CTkFrame(master=app, corner_radius=12)
+        self.video_frame.grid(row=1, column=0, columnspan=2, padx=(10, 10), pady=(5, 5))
+
+        # Etiqueta para el feed de video
+        self.video_label = ct.CTkLabel(master=self.video_frame, text='', width=600, height=370, corner_radius=12)
+        self.video_label.pack(fill=ct.BOTH, padx=(0, 0), pady=(0, 0))
+
+        # Cargar imagen de cámara apagada
+        camera_off_image = ct.CTkImage(light_image=Image.open("camara_apagada.png"), size=(590, 350))
+        self.video_label.configure(image=camera_off_image)
+
+        # Create a button to start the camera feed
+        self.Camera_feed_start = ct.CTkButton(master=self.frame_camara, text='START', width=150, height=40, border_width=0, corner_radius=12, command=lambda: self.open_camera1()) #, command=lambda: self.camara_ia.open_camera1()
+        self.Camera_feed_start.pack(side=ct.LEFT, pady=(5, 10))
+
+    # Interfaz del ahorcado muñeco
+    def munieco(self, app):
+        #self.EntradaTexto = ct.CTkLabel(app, text='', fg_color="black", width=200, height=50)
+        #self.EntradaTexto.grid(row=2, column=0)
+        self.frame_munieco=ct.CTkFrame(master=app, width=600, height=210, fg_color="transparent")
+        self.frame_munieco.grid(row=2, column=0, padx = (12,5),pady=(5,3))
+
+        self.Lienzo=ct.CTkCanvas(self.frame_munieco, width=200, height=200, bg="dark green")
+        self.Lienzo.pack(side=ct.LEFT, padx=(15, 20), pady=5)
+
+        self.EntradaTexto=ct.CTkLabel(self.frame_munieco, width=220, height=200, justify=ct.CENTER)
+        self.EntradaTexto.pack(side=ct.RIGHT, padx=(20, 5), pady=5)
+        myfont = ct.CTkFont(
+            family='Consolas',
+            weight='bold',
+            size=140
+        )
+        self.EntradaTexto.configure(fg_color="black", font=myfont, text='')
+
+    # Modificaciones para palabra como se ve en el recuadro falta ajustar
+    def palabra(self, app):
+
+        self.frame_palabra=ct.CTkFrame(master=app, width=750, height=210, fg_color="transparent")
+        self.frame_palabra.grid(row=2, column=1, padx = (20,10),pady=(10,10))
+        #Palabra
+        self.Texto1=tk.StringVar()
+
+        self.Etiqueta1=ct.CTkLabel(self.frame_palabra, textvariable=self.Texto1, width=680, height=2)
+        self.Etiqueta1.pack(side=ct.TOP, padx = (10,5), pady=(5,15))
+        self.Etiqueta1.configure(fg_color="transparent", font=("Verdana",60))
+
+        #Jugadas
+        self.Texto2=tk.StringVar()
+        self.Texto2.set("Tus jugadas: ")
+
+        self.Etiqueta2=ct.CTkLabel(self.frame_palabra, textvariable=self.Texto2, width=40, height=2)
+        self.Etiqueta2.pack(side=ct.BOTTOM, padx = (12,5), pady=(15,5))
+        self.Etiqueta2.configure(fg_color="transparent" ,font=("Verdana",30))
+
+    def botones(self, app):
+
+        self.frame_botones = ct.CTkFrame(master=app, height=50, fg_color="transparent")
+        self.frame_botones.grid(row=3, column=0, columnspan=2, pady=(4,4), padx=(10,10))
+
+        font_title = ct.CTkFont(family='Consolas', weight='bold', size=24)
+
+        self.BotonEnviarTexto=ct.CTkButton(self.frame_botones, text=">>>", width=80, command = self.BotonEnviar)
+        self.BotonEnviarTexto.grid(row=0, column=0, sticky="ew", padx = 25)
+        self.BotonEnviarTexto.configure(font=font_title, fg_color='steelblue', text_color= 'white', corner_radius= 8)  
+
+        self.BotonNuevoJuego = ct.CTkButton(self.frame_botones, text="NUEVO JUEGO", width=250, command=self.JuegoNuevo)
+        self.BotonNuevoJuego.grid(row=0, column=1, sticky="ew", padx = 120)
+        self.BotonNuevoJuego.configure(font=font_title, fg_color='steelblue', text_color= 'white', corner_radius= 8)
+
+        self.BotonSalir=ct.CTkButton(self.frame_botones, text="SALIR", width=120, command =lambda: self.cerrar_ventana(app))
+        self.BotonSalir.grid(row=0, column=2, sticky="ew", padx = 25)
+        self.BotonSalir.configure(font=font_title, fg_color='steelblue', text_color= 'white', corner_radius= 8)
 
     # Para dibujar al muñeco del ahorcado 
 
