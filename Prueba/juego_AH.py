@@ -237,6 +237,68 @@ class Juego_senias:
         self.BotonSalir.configure(font=font_title, fg_color='steelblue', text_color= 'white', corner_radius= 8)
 
     # Para dibujar al muñeco del ahorcado 
+    def __Dibujo(self):
+
+        if self.EstamosJugando:
+            oportunidades=self.ObjetoJuego.getOportunidades()
+            if oportunidades==1:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+                self.Lienzo.create_line(100,82, 70,112, width=3,fill="white")#brazo1
+                self.Lienzo.create_line(100,82, 130,112, width=3,fill="white")#brazo2
+                self.Lienzo.create_line(100,135, 70,165, width=3,fill="white")#pierna1
+            elif oportunidades==2:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+                self.Lienzo.create_line(100,82, 70,112, width=3,fill="white")#brazo1
+                self.Lienzo.create_line(100,82, 130,112, width=3,fill="white")#brazo2
+            elif oportunidades==3:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+                self.Lienzo.create_line(100,82, 70,112, width=3,fill="white")#brazo1
+            elif oportunidades==4:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+            elif oportunidades==5:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+            else:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+        else:
+            if self.ObjetoJuego.getVictoria():
+                self.Lienzo.delete("all")
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+                self.Lienzo.create_line(100,87, 70,57, width=3,fill="white")#brazo1
+                self.Lienzo.create_line(100,87, 130,57, width=3,fill="white")#brazo2
+                self.Lienzo.create_line(100,135, 70,165, width=3,fill="white")#pierna1
+                self.Lienzo.create_line(100,135, 130,165, width=3,fill="white")#pierna2
+            else:
+                self.Lienzo.delete("all")
+                self.Lienzo.create_line(30,185, 30,20, 100,20, 100,45 ,width=5,fill="white")#horca
+                self.Lienzo.create_line(15,193, 15,185, 185,185, 185,193,width=5,fill="white")#horca
+                self.Lienzo.create_oval(85,45, 115,75, width=3,fill="dark green",outline="white")#cabeza
+                self.Lienzo.create_line(100,75, 100,135, width=3,fill="white")#torso
+                self.Lienzo.create_line(100,82, 70,112, width=3,fill="white")#brazo1
+                self.Lienzo.create_line(100,82, 130,112, width=3,fill="white")#brazo2
+                self.Lienzo.create_line(100,135, 70,165, width=3,fill="white")#pierna1
+                self.Lienzo.create_line(100,135, 130,165, width=3,fill="white")#pierna2
 
     # Cierre desvinculacion 
     def cerrar_ventana(self, app):
