@@ -1,8 +1,8 @@
 import time
-#from asistente import AsistenteVoz
-#from juego_AH import Juego_senias
-#from juego_LC import JuegoLetras
-#from juego_LADRILLOS import Arkanoid
+from asistente import AsistenteVoz
+from juego_AH import Juego_senias
+from juego_LC import JuegoLetras
+from juego_LADRILLOS import Arkanoid
 import customtkinter as ctk
 from PIL import Image
 import queue
@@ -34,7 +34,18 @@ class VirtualAssistant:
         if leer_voz:
             self.texto_a_audio(mensaje)  # Leer el mensaje en voz alta
     #Iniciando arkanoid...
+    def do_learn(self):
+        self.imprimir_mensaje("Iniciando arkanoid...")
+        self.win_choose.destroy()
+        juego = Arkanoid(callback=self.presentar_opciones)  # Pasar el callback
+        juego.iniciar_juego()
+
     #Iniciando Juego Letras Caen..."
+    def do_game2(self):
+        mi_queue = queue.Queue()
+        self.imprimir_mensaje("Iniciando Juego Letras Caen...")
+        self.win_choose.destroy()
+        self.mi_juego2.ejecutar(mi_queue)
 
     #"Iniciando Juego Del Ahorcado..."
     def do_game(self):
@@ -88,8 +99,30 @@ class VirtualAssistant:
         )
 
         # Opción 1: Juego Reconoce Señas
+        option1_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        option1_frame.grid(row=0, column=0, padx=10, pady=10)
+        img_label1 = ctk.CTkLabel(option1_frame, image=img_reconoce_señas, text="")
+        img_label1.pack(pady=5)
+        learn_button = ctk.CTkButton(
+            option1_frame,
+            text="Juego Arkanoid",
+            command=self.do_learn,
+            width=200,
+        )
+        learn_button.pack()
 
         # Opción 2: Juego Letras Caen
+        option2_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        option2_frame.grid(row=0, column=1, padx=10, pady=10)
+        img_label2 = ctk.CTkLabel(option2_frame, image=img_letras_caen, text="")
+        img_label2.pack(pady=5)
+        juego2_button = ctk.CTkButton(
+            option2_frame,
+            text="Juego Letras Caen",
+            command=self.do_game2,
+            width=200,
+        )
+        juego2_button.pack()
         
         # Opción 3: Juego del Ahorcado
         option3_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
