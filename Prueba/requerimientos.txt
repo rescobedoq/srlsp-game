@@ -1,0 +1,14 @@
+tk
+pyaudio
+pillow
+speechRecognition
+pyttsx3
+opencv-python
+mediapipe
+tensorflow
+customtkinter
+pygame
+scikit-learn==1.6.0
+pillow==9.5.0
+imageio
+imageio[ffmpeg]
