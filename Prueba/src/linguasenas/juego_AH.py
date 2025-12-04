@@ -1,5 +1,5 @@
-from ClaseJuego import ClaseJuego
-from abecedario import ClasificadorSenia  # Importamos ClasificadorSenia
+from linguasenas.games.ClaseJuego import ClaseJuego
+from linguasenas.tools.abecedario import ClasificadorSenia
 import threading
 import time
 import customtkinter as ct

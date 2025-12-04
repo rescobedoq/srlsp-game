@@ -1,8 +1,8 @@
 import time
-from asistente import AsistenteVoz
-from juego_AH import Juego_senias
-from juego_LC import JuegoLetras
-from juego_LADRILLOS import Arkanoid
+from linguasenas.audio.asistente import AsistenteVoz
+from linguasenas.games.juego_AH import Juego_senias
+from linguasenas.games.juego_LC import JuegoLetras
+from linguasenas.games.juego_LADRILLOS import Arkanoid
 import customtkinter as ctk
 from PIL import Image
 import queue

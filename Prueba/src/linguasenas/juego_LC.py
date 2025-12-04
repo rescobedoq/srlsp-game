@@ -1,6 +1,6 @@
 import pygame
 import random
-from abecedario import ClasificadorSenia
+from linguasenas.tools.abecedario import ClasificadorSenia
 import cv2
 from threading import Thread
 from PIL import Image
