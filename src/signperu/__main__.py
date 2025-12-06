@@ -12,7 +12,7 @@ def main():
     try:
         from gui.main_window import MainWindow
     except Exception as e:
-        print("GUI modules not available:\", e)
+        #print("GUI modules not available:\", e)
         print("You can still import package modules for development.")
         return
 
