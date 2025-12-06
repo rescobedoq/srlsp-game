@@ -1,4 +1,4 @@
-#src/signperu/services/thread_utils.py
+#src/signperu/utils/thread_utils.py
 import queue
 
 def make_event_queue(maxsize=0):
