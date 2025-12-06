@@ -1,4 +1,4 @@
-#srlsp-game/src/signperu/games/base_game.py
+#srlsp-game/src/signperu/games/game_base.py
 # Clase abstracta que define la interfaz de un minijuego
 from abc import ABC, abstractmethod
 

@@ -1,30 +1,35 @@
 #srlsp-game/src/signperu/games/juego_ah.py
-from .base_game import BaseGame
-import threading, time
+# juego_AH.py
+# Juego simple: cuando detecta la letra esperada cuenta éxito
+from signperu.games.game_base import Game
 
-class JuegoAH(BaseGame):
-    def __init__(self, user, event_queue, db):
-        super().__init__(user, event_queue, db)
-        self._running = False
+class JuegoAH(Game):
+    def __init__(self, app_context, target_letter='A'):
+        super().__init__(app_context)
+        self.target = target_letter
+        self.attempts = 0
+        self.successes = 0
 
     def start(self):
-        self._running = True
-        print("Juego AH iniciado for user", self.user)
-        # Example: consume queue in a separate thread
-        threading.Thread(target=self._loop, daemon=True).start()
-
-    def _loop(self):
-        while self._running:
-            try:
-                ev = self.event_queue.get(timeout=0.5)
-                self.on_event(ev)
-            except Exception:
-                pass
-            time.sleep(0.01)
+        super().start()
+        self.attempts = 0
+        self.successes = 0
+        print(f"[JuegoAH] Iniciado. Objetivo: {self.target}")
 
     def stop(self):
-        self._running = False
+        super().stop()
+        print(f"[JuegoAH] Detenido. Intentos: {self.attempts}, Éxitos: {self.successes}")
 
-    def on_event(self, event):
-        if event.get('type') == 'letter':
-            print("[AH] detected:", event.get('letter'), event.get('score'))
+    def on_detection(self, token):
+        # lógica simple: si token == target -> éxito
+        self.attempts += 1
+        if token == self.target:
+            self.successes += 1
+            print(f"[JuegoAH] Éxito detectado: {token} (total éxitos: {self.successes})")
+        else:
+            print(f"[JuegoAH] Detección: {token} (no coincide con {self.target})")
+        # persistir progreso (si se dispone de DB)
+        db = self.context.get("db")
+        user = self.context.get("user")
+        if db and user:
+            db.save_score(user["id"], "AH", self.successes, details=f"attempts={self.attempts}")
