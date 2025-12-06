@@ -1,4 +1,4 @@
-#src/signperu/games/base_game.py
+#srlsp-game/src/signperu/games/base_game.py
 from abc import ABC, abstractmethod
 
 class BaseGame(ABC):

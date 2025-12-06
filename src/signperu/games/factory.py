@@ -1,4 +1,4 @@
-#src/signperu/games/factory.py
+#srlsp-game/src/signperu/games/factory.py
 from .juego_ah import JuegoAH
 from .juego_ladrillos import JuegoLadrillos
 from .juego_lc import JuegoLC

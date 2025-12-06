@@ -1,4 +1,4 @@
-#src/signperu/data/data.py
+#srlsp-game/src/signperu/data/data.py
 import os, sqlite3, threading
 
 class DB:

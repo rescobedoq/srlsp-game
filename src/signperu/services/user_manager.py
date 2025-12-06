@@ -1,4 +1,4 @@
-#src/signperu/services/user_manager.py
+#srlsp-game/src/signperu/services/user_manager.py
 import sqlite3
 from ..data.db import DB
 

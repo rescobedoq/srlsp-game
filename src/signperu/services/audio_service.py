@@ -1,4 +1,4 @@
-#src/signperu/services/audio_service.py
+#srlsp-game/src/signperu/services/audio_service.py
 import threading
 import pyttsx3
 

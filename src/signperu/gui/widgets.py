@@ -1,4 +1,4 @@
-#src/signperu/gui/widgets.py
+#srlsp-game/src/signperu/gui/widgets.py
 # Reusable widgets for the GUI (placeholders)
 def make_label(parent, text):
     try:

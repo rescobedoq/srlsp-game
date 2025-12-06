@@ -1,4 +1,4 @@
-#src/signperu/gui/main_window.py
+#srlsp-game/src/signperu/gui/main_window.py
 """A minimal GUI using CustomTkinter that starts/stops the Recognizer and launches games."""
 import threading, queue
 try:

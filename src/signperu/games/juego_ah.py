@@ -1,4 +1,4 @@
-#src/signperu/games/juego_ah.py
+#srlsp-game/src/signperu/games/juego_ah.py
 from .base_game import BaseGame
 import threading, time
 

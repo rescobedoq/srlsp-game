@@ -1,4 +1,4 @@
-#src/signperu/_main_.py
+#srlsp-game/src/signperu/_main_.py
 """Entry point for signperu package.
 
 Usage:

@@ -1,4 +1,4 @@
-#src/signperu/core/recognizer.py
+#srlsp-game/src/signperu/core/recognizer.py
 """Reconocedor en subprocesos que captura fotogramas"""
 import threading
 import time
