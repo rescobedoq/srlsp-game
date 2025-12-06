@@ -1,4 +1,4 @@
-from PalabraNueva import PalabraNueva
+from linguasenas.tools.PalabraNueva import PalabraNueva
 
 class ClaseJuego:
 
