@@ -33,13 +33,16 @@ VISOR_WIDTH = 640
 VISOR_HEIGHT = 480
 
 class MainWindow(ctk.CTk):
+
     def __init__(self,
-                 event_bus: EventBus = None,
-                 frame_queue: Queue = None,
-                 capture_thread: CaptureThread = None,
-                 processing_thread: ProcessingThread = None,
-                 db: DBManager = None,
-                 user: dict = None):
+             event_bus: EventBus = None,
+             frame_queue: Queue = None,
+             capture_thread: CaptureThread = None,
+             processing_thread: ProcessingThread = None,
+             db: DBManager = None,
+             user: dict = None,
+             juego: object = None):   # <-- añadido
+
         """
         event_bus: instancia compartida de EventBus (si None, se crea una nueva)
         frame_queue: queue de frames (si None, se crea con tamaño por defecto)
@@ -60,6 +63,12 @@ class MainWindow(ctk.CTk):
         # Queues internas para comunicación segura entre hilos y Tk
         self._ui_frame_queue = Queue(maxsize=2)      # recibe frames desde EventBus
         self._detection_queue = Queue(maxsize=8)     # recibe tokens de detección
+        self._game_update_queue = Queue(maxsize=4)   # recibe payloads de game_update / game_over
+
+        # Guardar referencia al juego (si se pasó desde app.py)
+        # Esto permite que la UI llame a juego.nuevojuego() cuando el usuario pulse NUEVO JUEGO
+        self.juego = kwargs.get("juego") if "kwargs" in locals() else None
+        self.BotonNuevoJuego = ctk.CTkButton(self.frame_botones, text="NUEVO JUEGO", width=250, command=self._on_new_game_from_ui)
 
         # Variables UI
         self._photo_image = None
@@ -83,6 +92,8 @@ class MainWindow(ctk.CTk):
         # IMPORTANTE: los callbacks de EventBus deben ser ligeros y sólo encolar datos.
         self.event_bus.subscribe("frame", self._enqueue_frame_from_eventbus)
         self.event_bus.subscribe("detection", self._enqueue_detection_from_eventbus)
+        self.event_bus.subscribe("game_update", self._enqueue_game_update_from_eventbus)
+        self.event_bus.subscribe("game_over", self._enqueue_game_update_from_eventbus)
         self.event_bus.subscribe("quit", lambda _: self._on_close())
 
         # Iniciar polling del UI (after)
@@ -147,6 +158,15 @@ class MainWindow(ctk.CTk):
         self.lbl_detection = ctk.CTkLabel(self.info_frame, text="Última detección: —", font=ctk.CTkFont(size=16, weight="bold"))
         self.lbl_detection.pack(anchor="w", padx=6, pady=6)
 
+        # Widgets para mostrar estado del juego AH
+        self.lbl_game_word = ctk.CTkLabel(self.info_frame, text="Palabra: —", font=ctk.CTkFont(size=18))
+        self.lbl_game_word.pack(anchor="w", padx=6, pady=(4,2))
+
+        self.lbl_game_oportunidades = ctk.CTkLabel(self.info_frame, text="Oportunidades: —", font=ctk.CTkFont(size=14))
+        self.lbl_game_oportunidades.pack(anchor="w", padx=6, pady=(0,6))
+
+
+
         # Botón salir
         self.btn_quit = ctk.CTkButton(self.main_panel, text="Salir", command=self._on_close)
         self.btn_quit.pack(anchor="e", padx=6, pady=(12,0))
@@ -169,6 +189,14 @@ class MainWindow(ctk.CTk):
         try:
             if not self._detection_queue.full():
                 self._detection_queue.put((token, time.time()))
+        except Exception:
+            pass
+
+    def _enqueue_game_update_from_eventbus(self, payload):
+        """Encola payloads de 'game_update' o 'game_over' para que la UI los procese."""
+        try:
+            if not self._game_update_queue.full():
+                self._game_update_queue.put(payload)
         except Exception:
             pass
 
@@ -215,6 +243,21 @@ class MainWindow(ctk.CTk):
         self.lbl_status.configure(text="Estado: Detenido")
         self.btn_start.configure(state="normal")
         self.btn_stop.configure(state="disabled")
+    
+    def _on_new_game_from_ui(self):
+        """Handler llamado desde el botón NUEVO JUEGO en la UI."""
+        try:
+            # si la UI tiene la instancia del juego, pedirle nuevo juego (thread-safe)
+            if self.juego:
+                # llamamos desde el hilo principal; el método nuevojuego es thread-safe
+                self.juego.nuevojuego()
+                # opcional: actualizar status
+                self.lbl_status.configure(text="Estado: Nuevo juego iniciado")
+            else:
+                # publicar o loggear que no hay juego asociado
+                print("[UI] No hay instancia de juego asociada a MainWindow.")
+        except Exception as e:
+            print(f"[UI] Error iniciando nuevo juego: {e}")
 
     def _on_profile(self):
         # Placeholder: abrir frame perfil / historial
@@ -254,6 +297,31 @@ class MainWindow(ctk.CTk):
             if self._last_detection_ts and (time.time() - self._last_detection_ts) > self._detection_display_seconds:
                 self.lbl_detection.configure(text="Última detección: —")
                 self._last_detection_ts = 0
+        
+                # procesar updates del juego (game_update / game_over)
+        try:
+            payload = self._game_update_queue.get_nowait()
+            # payload es un dict con keys como 'letrero', 'oportunidades', 'victoria', etc.
+            letrero = payload.get("letrero", "")
+            oportunidades = payload.get("oportunidades", None)
+            final = payload.get("final", False)
+
+            # actualizar widgets (hacer .configure desde hilo principal)
+            self.lbl_game_word.configure(text=f"Palabra: {letrero}")
+            if oportunidades is not None:
+                self.lbl_game_oportunidades.configure(text=f"Oportunidades: {oportunidades}")
+
+            # si es final, podemos mostrar mensaje emergente o cambiar estado
+            if final:
+                # mostrar resumen simple
+                if payload.get("victoria"):
+                    msg = "¡Victoria! "
+                else:
+                    msg = f"Perdiste. Palabra: {payload.get('palabra')}"
+                # usar after para mostrar dialog si es necesario, aquí solo actualizamos status
+                self.lbl_status.configure(text=f"Estado: Juego finalizado - {msg}")
+        except Empty:
+            pass
 
     def _show_frame_in_label(self, frame_bgr):
         """Convierte frame BGR -> ImageTk y lo muestra en el label."""

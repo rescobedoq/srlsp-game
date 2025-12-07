@@ -36,12 +36,17 @@ def main():
     # Contexto compartido para los juegos
     app_context = {"event_bus": event_bus, "db": db, "user": user}
 
-    # Creamos la instancia del juego (no se inicia en cuanto a threads; solo la lógica)
-    juego = JuegoAH(app_context, target_letter='A')
-    juego.start()  # inicializa estado interno del juego
+        # Creamos la instancia del juego (no se inicia en cuanto a threads; solo la lógica)
+    # NOTA: la versión refactorizada de JuegoAH recibe app_context; no pasar target_letter.
+    juego = JuegoAH(app_context)
+    juego.start()  # inicializa estado interno del juego y publica estado inicial
 
     # Suscribimos el juego a eventos de detección para que reciba tokens
     event_bus.subscribe("detection", lambda token: juego.on_detection(token))
+
+    # Suscribimos handlers para game_update / game_over (útiles para debug y UI)
+    event_bus.subscribe("game_update", lambda payload: print("[EVENT] game_update:", payload))
+    event_bus.subscribe("game_over", lambda payload: print("[EVENT] game_over:", payload))
 
     # --- Creamos instancias de threads pero no las arrancamos aquí ---
     # La MainWindow iniciará los hilos cuando el usuario pulse "Iniciar captura".
@@ -63,7 +68,8 @@ def main():
                     capture_thread=cap_thread,
                     processing_thread=proc_thread,
                     db=db,
-                    user=user)
+                    user=user,
+                    juego=juego)   # <-- pasar instancia del juego a la UI
 
     # Ejecutar la UI (bloqueante, debe ejecutarse en el hilo principal)
     mw.mainloop()
