@@ -4,47 +4,57 @@ import cv2
 import threading
 import time
 from queue import Queue, Empty
-from signperu import config
+from queue import Queue, Full
 
 class CaptureThread(threading.Thread):
-    def __init__(self, frame_queue: Queue, camera_index=None, width=None, height=None, target_fps=None):
+    """
+    Lector de cámara en un hilo. Publica frames por event_bus y también los pone en frame_queue.
+    """
+    def __init__(self, event_bus, src=0, target_fps=20, frame_queue:Queue=None):
         super().__init__(daemon=True)
-        self.frame_queue = frame_queue
-        self.camera_index = camera_index if camera_index is not None else config.CAMERA_INDEX
-        self.width = width or config.FRAME_WIDTH
-        self.height = height or config.FRAME_HEIGHT
-        self.target_fps = target_fps or config.TARGET_FPS
-        self._stop_event = threading.Event()
-        self._cap = None
+        self.src = src
+        self.cap = None
+        self.running = False
+        self.event_bus = event_bus
+        self.target_fps = target_fps
+        self.frame_queue = frame_queue or Queue(maxsize=2)
 
     def run(self):
         # inicializar la captura
-        self._cap = cv2.VideoCapture(self.camera_index)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        # cálculo de espera entre frames
-        delay = 1.0 / float(self.target_fps) if self.target_fps > 0 else 0
-        while not self._stop_event.is_set():
-            ret, frame = self._cap.read()
+        self.cap = cv2.VideoCapture(self.src, cv2.CAP_DSHOW if hasattr(cv2, "CAP_DSHOW") else 0)
+        if not self.cap.isOpened():
+            print("[CaptureThread] No se pudo abrir la cámara")
+            return
+        self.running = True
+        interval = 1.0 / max(1, self.target_fps)
+        while self.running:
+            t0 = time.time()
+            ret, frame = self.cap.read()
             if not ret:
-                # breve espera y retry
                 time.sleep(0.05)
                 continue
-            # colocamos el frame en la cola (si está llena, descartamos el más antiguo)
+            # publicamos frame en cola (para procesamiento) y en bus (para GUI si desea)
             try:
+                # non-blocking put: si cola llena, descartamos el frame anterior
                 self.frame_queue.put(frame, block=False)
-            except Exception:
-                # si la cola está llena, tratamos de vaciar uno y reintentar
+            except Full:
                 try:
-                    self.frame_queue.get_nowait()
+                    _ = self.frame_queue.get_nowait() # si la cola está llena, tratamos de vaciar uno y reintentar 
                     self.frame_queue.put(frame, block=False)
                 except Exception:
                     pass
-            time.sleep(delay)
-
-        # liberamos recursos
-        if self._cap and self._cap.isOpened():
-            self._cap.release()
+            # publicar por bus (opcional)
+            self.event_bus.publish("frame_captured", frame)
+            dt = time.time() - t0
+            sleep = interval - dt
+            if sleep > 0:
+                time.sleep(sleep)
 
     def stop(self):
-        self._stop_event.set()
+        self.running = False
+        try:
+            if self.cap and self.cap.isOpened(): # liberamos recursos
+                self.cap.release()
+        except Exception:
+            pass
+

@@ -1,31 +1,29 @@
 #srlsp-game/src/signperu/core/events.py
 # Bus de eventos sencillo para desacoplar detector -> UI / juegos / logger
 import threading
+from collections import defaultdict
 
 class EventBus:
+    """Pub/Sub simple y thread-safe."""
     def __init__(self):
-        self._subs = {}
-        self._lock = threading.Lock()
+        self._subs = defaultdict(list)
+        self._lock = threading.RLock()
 
     def subscribe(self, event_name, callback):
-        """Suscribe una función (callback) a un evento."""
         with self._lock:
-            self._subs.setdefault(event_name, []).append(callback)
+            self._subs[event_name].append(callback)
 
     def unsubscribe(self, event_name, callback):
-        """Quita una suscripción."""
         with self._lock:
-            if event_name in self._subs and callback in self._subs[event_name]:
+            if callback in self._subs[event_name]:
                 self._subs[event_name].remove(callback)
 
-    def publish(self, event_name, data=None):
-        """Publica un evento; las callbacks se ejecutan en el hilo que publica."""
-        callbacks = []
+    def publish(self, event_name, *args, **kwargs):
         with self._lock:
-            callbacks = list(self._subs.get(event_name, []))
-        for cb in callbacks:
+            subs = list(self._subs[event_name])
+        for cb in subs:
             try:
-                cb(data)
+                cb(*args, **kwargs)
             except Exception as e:
-                # No dejamos que una excepción rompa el bus
-                print(f"[EventBus] Error en callback {cb}: {e}")
+                # Solo logueamos, no fallamos todo el bus
+                print(f"[EventBus] handler error for {event_name}: {e}")

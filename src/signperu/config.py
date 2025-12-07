@@ -1,6 +1,8 @@
 #srlsp-game/src/signperu/config.py
 # config.py
 # Configuración global del proyecto (valores por defecto)
+CAMERA_SRC = 0
+FPS = 12
 CAMERA_INDEX = 0            # índice de la cámara por defecto
 FRAME_WIDTH = 640           # ancho de la imagen capturada
 FRAME_HEIGHT = 480          # alto de la imagen capturada
