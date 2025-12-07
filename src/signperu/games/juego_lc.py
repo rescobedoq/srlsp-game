@@ -1,4 +1,4 @@
-#src/signperu/games/juego_lc.py
+#srlsp-game/src/signperu/games/juego_lc.py
 from .base_game import BaseGame
 
 class JuegoLC(BaseGame):

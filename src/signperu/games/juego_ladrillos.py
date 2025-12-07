@@ -1,4 +1,4 @@
-#src/signperu/games/juego_ladrillos.py
+#srlsp-game/src/signperu/games/juego_ladrillos.py
 from .base_game import BaseGame
 
 class JuegoLadrillos(BaseGame):
