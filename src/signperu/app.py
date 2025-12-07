@@ -11,6 +11,8 @@
 import time
 from queue import Queue
 
+from signperu.core.detector import DetectorSenias
+from signperu.core.strategies import TemporalConsensusStrategy, SimpleProcessingStrategy
 from signperu.core.events import EventBus
 from signperu.persistence.db_manager import DBManager
 from signperu.games.juego_AH import JuegoAH
@@ -49,7 +51,10 @@ def main():
                                height=config.FRAME_HEIGHT,
                                target_fps=config.TARGET_FPS)
 
-    proc_thread = ProcessingThread(frame_queue, event_bus)
+    detector = DetectorSenias()  # o pasar parámetros si lo soporta
+    strategy = TemporalConsensusStrategy(detector, event_bus=event_bus, logger=get_logger("signperu.strategy"))
+    proc_thread = ProcessingThread(frame_queue, event_bus, detector=detector, strategy=strategy)
+    #proc_thread = ProcessingThread(frame_queue, event_bus)
 
     # Creamos y arrancamos la GUI principal, pasando las dependencias necesarias.
     # MainWindow se encarga de iniciar/detener los hilos y cerrar la DB al salir.
