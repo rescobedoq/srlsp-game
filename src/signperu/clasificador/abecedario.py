@@ -14,31 +14,37 @@ class ClasificadorSenia:
         self.mp_drawing = mp.solutions.drawing_utils
         self.abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-    # Procesa la imagen para detectar puntos clave de la mano.
     def procesar_mano(self, frame):
-        # Ahora devuelve: (letra_detectada | None, frame_annotado, lista_coordenadas_o_None
-        image_height, image_width, _ = frame.shape
+        """
+        Procesa la imagen para detectar puntos clave de la mano.
+        Ahora: dibuja sobre la copia RGB (la que usa mediapipe), convierte a BGR para OpenCV
+        y devuelve (letra_detectada | None, frame_annotado_BGR, lista_coordenadas_o_None).
+        """
+        # obtener tamaño
+        height, width, _ = frame.shape
+
+        # MediaPipe espera RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         resultado = self.hands.process(frame_rgb)
 
         if resultado.multi_hand_landmarks:
             for hand_landmarks in resultado.multi_hand_landmarks:
-                # dibujamos sobre el frame BGR original con especificaciones más visibles
-                # colores en BGR
-                self.mp_drawing.draw_landmarks(
-                    frame,
-                    hand_landmarks,
+                # Dibujamos sobre frame_rgb (RGB colors)
+                self.mp_drawing.draw_landmarks(frame_rgb,hand_landmarks,
                     self.mp_hands.HAND_CONNECTIONS,
-                    self.mp_drawing.DrawingSpec(color=(0,255,0), thickness=3, circle_radius=5),
-                    self.mp_drawing.DrawingSpec(color=(0,128,255), thickness=2, circle_radius=3)
+                    self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1, circle_radius=1),
+                    self.mp_drawing.DrawingSpec(color=(0, 128, 255), thickness=1, circle_radius=1)
                 )
-
-                # extraemos coordenadas (x,y) enteras
+                # extraemos coordenadas (x,y) enteras relativas al tamaño original
                 coordenadas = self.extraer_coordenadas(hand_landmarks, frame.shape)
+                # clasificamos la letra usando los landmarks (sigue usando hand_landmarks)
+                letra_detectada = self.clasificar_letra(hand_landmarks, width, height)
+                # convertimos la imagen anotada de RGB -> BGR para que OpenCV y CTk la muestren correctamente
+                frame_annotado_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
-                letra_detectada = self.clasificar_letra(hand_landmarks, image_width, image_height)
-                return letra_detectada, frame, coordenadas
+                return letra_detectada, frame_annotado_bgr, coordenadas
 
+        # si no detectó nada devolvemos el frame original (BGR) y None para coords
         return None, frame, None
 
     def extraer_coordenadas(self, landmarks, frame_shape):

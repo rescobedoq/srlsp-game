@@ -4,12 +4,7 @@
 # y utiliza logging. Publica eventos adicionales en EventBus para facilitar tracing.
 
 #import time
-#from queue import Queue, Empty
-#from signperu.core.events import EventBus
-#from signperu.core.detector import DetectorSenias
-#from signperu.utils.logger import get_logger
-#from signperu import config
-# Import de la interfaz Strategy (si se quiere proporcionar directamente)
+#Import de la interfaz Strategy (si se quiere proporcionar directamente)
 #from signperu.core.strategies import ProcessingStrategy, SimpleProcessingStrategy
 import threading
 from queue import Queue, Empty
@@ -33,15 +28,20 @@ class ProcessingThread(threading.Thread):
                 frame = self.frame_queue.get(timeout=0.5)
             except Empty:
                 continue
+            # src/signperu/core/processing.py (dentro del while)
             try:
-                letra, frame_proc = self.detector.detect_from_frame(frame)
-                # Publicar incluso si letra==None para que GUI muestre el feed
-                self.event_bus.publish("hand_detected", letra, frame=frame_proc)
+                letra, frame_proc, coords = self.detector.detect_from_frame(frame)
+                if coords:
+                    """ #Solo para comprobar que detecta las manos
+                    try:
+                        print("[ProcessingThread] detected:", letra, "landmarks(0:5):", coords[:5])
+                    except Exception:
+                        print("[ProcessingThread] detected:", letra, "landmarks count:", len(coords))
+                    """
+                # Publicamos coords como 'landmarks' para quien quiera verlas
+                self.event_bus.publish("hand_detected", letra, frame=frame_proc, landmarks=coords)
             except Exception as e:
                 print("[ProcessingThread] error:", e)
 
     def stop(self):
         self.running = False
-
-
-      

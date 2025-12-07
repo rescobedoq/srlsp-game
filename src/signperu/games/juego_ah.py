@@ -70,7 +70,7 @@ class JuegoAH(GameBase):
             pass
 
     # Public callback para event_bus -> lo convertimos a llamada en hilo principal usar after
-    def _on_hand_detected_event(self, letra, frame=None):
+    def _on_hand_detected_event(self, letra, frame=None, **kwargs):
         # este callback puede venir desde cualquier hilo, actualizamos UI con .after
         if letra:
             def update():
@@ -82,6 +82,26 @@ class JuegoAH(GameBase):
                     pass
             if self.app:
                 self.app.after(0, update)
+        # --- actualizar imagen con el frame anotado (si se proporcionó) ---
+        if frame is not None:
+            def update_image():
+                try:
+                    # frame llega en BGR (como lo produce detect_from_frame / procesar_mano)
+                    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+                    img = cv2.flip(img, 1)
+                    pil = Image.fromarray(img)
+                    if not self._ctk_image:
+                        self._ctk_image = ct.CTkImage(dark_image=pil, size=(500, 370))
+                        self.video_label.configure(image=self._ctk_image)
+                    else:
+                        # actualizar imagen existente para no recrear widgets constantemente
+                        self._ctk_image.configure(dark_image=pil)
+                        self.video_label.configure(image=self._ctk_image)
+                except Exception as e:
+                    # debug leve: no detener app por errores de imagen
+                    print("[JuegoAH] update_image error:", e)
+            if self.app and self.camara_activa:
+                self.app.after(0, update_image)
 
     # --- Implementación requerida por GameBase (abstract method) ---
     def on_hand_detected(self, letra, frame=None):
