@@ -15,13 +15,13 @@ from signperu.core.events import EventBus
 from signperu.core.capture import CaptureThread
 from signperu.core.processing import ProcessingThread
 from signperu.core.detector import DetectorWrapper
-from signperu.games import clase_ah  # ruta de la clase juego  ahorcado
+from signperu.games.clase_ah import ClaseAh  # ruta de la clase juego  ahorcado
 
 class JuegoAH(GameBase):
     def __init__(self, event_bus, db=None, config=None, user=None):
         super().__init__(event_bus, db, config, user)
         # lógica del ahorcado
-        self.ObjetoJuego = clase_ah()
+        self.ObjetoJuego = ClaseAh()
         # UI state
         self.app = None
         self.video_label = None
@@ -82,6 +82,16 @@ class JuegoAH(GameBase):
                     pass
             if self.app:
                 self.app.after(0, update)
+
+    # --- Implementación requerida por GameBase (abstract method) ---
+    def on_hand_detected(self, letra, frame=None):
+        """
+        Implementación de la interfaz GameBase.
+        Será llamada por quien necesite notificar detecciones de mano.
+        Reutiliza la lógica de _on_hand_detected_event para actualizar la UI.
+        """
+        # Reusamos el mismo flujo: llamar al handler que actualiza UI con .after
+        self._on_hand_detected_event(letra, frame=frame)
 
     def _on_frame_event(self, frame):
         """Actualizamos el feed de la cámara en la UI (frame puede venir anotado)."""
@@ -159,6 +169,19 @@ class JuegoAH(GameBase):
         key_pressed = event.char
         if key_pressed not in {'\r', '\x1b', '\uf702', '\uf703'}:
             self.EntradaTexto.configure(text=key_pressed)
+    
+    def titulo(self, app):
+        #Construye el título superior del juego (misma apariencia que en la versión original).
+        font_title = ct.CTkFont(family='Consolas', weight='bold', size=25)
+        title = ct.CTkLabel(app,
+                            text='JUEGO DEL AHORCADO CON SEÑAS',
+                            fg_color='steelblue',
+                            text_color='white',
+                            height=30,
+                            font=font_title,
+                            corner_radius=8)
+        # Usamos grid para colocarlo como antes
+        title.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(5, 4), padx=(7, 10))
 
     def _build_camera_ui(self, app):
         frame_camara = ct.CTkFrame(master=app)

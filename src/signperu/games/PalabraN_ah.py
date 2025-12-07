@@ -1,6 +1,7 @@
+#srlsp-game/src/signperu/games/PalabraN_ah.py
 from random import choice 
 
-ArchivoExterno=open("PALABRAS","r")
+ArchivoExterno=open("signperu/games/PALABRAS","r")
 ListaPalabras=[]
 
 for palabra in ArchivoExterno:
@@ -9,7 +10,7 @@ for palabra in ArchivoExterno:
 
 def PalabraNueva():
     try: return(choice(ListaPalabras))
-    except:return("PALABRAS")
+    except:return("signperu/games/PALABRAS")
 
 if __name__=="__main__":
     print(PalabraNueva())

@@ -1,7 +1,7 @@
 #srlsp-game/src/signperu/games/clase_ah.py
 #Logica del juego del ahorcado
 
-from signperu.games import PalabraN_ah
+from signperu.games.PalabraN_ah import PalabraNueva
 
 class ClaseAh:
 
@@ -9,7 +9,7 @@ class ClaseAh:
         self.nuevojuego()
         
     def nuevojuego(self):
-        self.palabra=PalabraN_ah()
+        self.palabra=PalabraNueva()
         self.palabraDeletreada=[]
         for letra in self.palabra:self.palabraDeletreada.append(letra)
         self.letreroJuego=[]

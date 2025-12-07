@@ -19,11 +19,10 @@ class DetectorWrapper:
         Retorna (letra, frame_annotado)
         """
         try:
-            letra, frame_proc = self._clf.procesar_mano(frame)
-            return letra, frame_proc
+            letra, frame_proc, coords = self._clf.procesar_mano(frame)
+            return letra, frame_proc, coords
         except Exception as e:
             # Si algo falla, devolvemos None y el frame original
             # para no romper el hilo de procesamiento
             # print("DetectorWrapper error:", e)
-            return None, frame
-
+            return None, frame, None

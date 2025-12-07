@@ -14,20 +14,33 @@ class ClasificadorSenia:
         self.mp_drawing = mp.solutions.drawing_utils
         self.abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+    # Procesa la imagen para detectar puntos clave de la mano.
     def procesar_mano(self, frame):
-        """Procesa la imagen para detectar puntos clave de la mano."""
+        # Ahora devuelve: (letra_detectada | None, frame_annotado, lista_coordenadas_o_None
         image_height, image_width, _ = frame.shape
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         resultado = self.hands.process(frame_rgb)
 
         if resultado.multi_hand_landmarks:
             for hand_landmarks in resultado.multi_hand_landmarks:
-                self.mp_drawing.draw_landmarks(frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+                # dibujamos sobre el frame BGR original con especificaciones más visibles
+                # colores en BGR
+                self.mp_drawing.draw_landmarks(
+                    frame,
+                    hand_landmarks,
+                    self.mp_hands.HAND_CONNECTIONS,
+                    self.mp_drawing.DrawingSpec(color=(0,255,0), thickness=3, circle_radius=5),
+                    self.mp_drawing.DrawingSpec(color=(0,128,255), thickness=2, circle_radius=3)
+                )
+
+                # extraemos coordenadas (x,y) enteras
+                coordenadas = self.extraer_coordenadas(hand_landmarks, frame.shape)
+
                 letra_detectada = self.clasificar_letra(hand_landmarks, image_width, image_height)
-                return letra_detectada, frame
-        
-        return None, frame
-    
+                return letra_detectada, frame, coordenadas
+
+        return None, frame, None
+
     def extraer_coordenadas(self, landmarks, frame_shape):
         """Extrae las coordenadas normalizadas de los puntos de la mano."""
         altura, ancho, _ = frame_shape
