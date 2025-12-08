@@ -21,15 +21,20 @@ MEDIA_DIR = os.path.join(os.path.dirname(__file__), "RecursosMultimedia")
 VIDEO_W = 380
 VIDEO_H = 290
 # Posición (X,Y) relativa al canvas (colocado a la derecha superior)
-VIDEO_POS = (800 - VIDEO_W - 10, 20)  # si canvas width = 800
+VIDEO_POS = (10, 20)  # si canvas width = 800
+#Offset horizontal desde la izquierda para pintar el área del juego (separa del panel cámara)
+GAME_OFFSET = VIDEO_W + 30   # espacio entre panel de cámara y área de juego
+# Tamaños del canvas general
+CANVAS_W = 1100
+CANVAS_H = 700
 
 class JuegoLadrillos(GameBase):
     def __init__(self, event_bus, db=None, config=None, user=None):
         super().__init__(event_bus, db, config, user)
-        self.width = 800
-        self.height = 600
-        self.logic = ClaseLadrillos(width=self.width, height=self.height)
-
+        self.width = CANVAS_W
+        self.height = CANVAS_H
+        # logic se creará en start() con dimensiones del área de juego
+        self.logic = None
         # UI
         self.root = None
         self.canvas = None
@@ -80,28 +85,47 @@ class JuegoLadrillos(GameBase):
         self.canvas = tk.Canvas(self.root, width=self.width, height=self.height, bg="black")
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
+        # calcular área de juego (dentro de la ventana) y crear la lógica con esas dimensiones
+        game_area_w = max(400, self.width - GAME_OFFSET - 40)   # mínimo 400 para que quepan bloques
+        game_area_h = max(400, self.height - 60)
+        # instanciar lógica (coordenadas y límites dentro del área de juego)
+        self.logic = ClaseLadrillos(width=game_area_w, height=game_area_h)
+
         self._show_main_menu()
         self.root.mainloop()
 
     def _show_main_menu(self):
         self.canvas.delete("all")
+        # dibujar fondo cámara + placeholder video area
+        vx, vy = VIDEO_POS
+        self.canvas.create_rectangle(vx-2, vy-2, vx+VIDEO_W+2, vy+VIDEO_H+2, outline="white", tags="video_frame_bg")
+        # Opcional: mini-preview del fondo del área de juego
+        game_cx = GAME_OFFSET + (self.logic.width // 2)
+        game_cy = self.height // 2
+
         logo_path = os.path.join(MEDIA_DIR, "arkanoid.png")
         if os.path.exists(logo_path):
             try:
                 img = Image.open(logo_path)
-                img = img.resize((400, int(400 * img.height / img.width)), Image.LANCZOS)
+                # ajusta tamaño para caber en el area de juego
+                max_logo_w = min(400, self.logic.width - 40)
+                new_h = int(max_logo_w * img.height / img.width)
+                img = img.resize((max_logo_w, new_h), Image.LANCZOS)
                 self._bg_photo = ImageTk.PhotoImage(img)
-                self.canvas.create_image(self.width//2, self.height//2 - 120, image=self._bg_photo)
+                self.canvas.create_image(GAME_OFFSET + self.logic.width//2, self.height//2 - 120, image=self._bg_photo)
             except Exception:
                 pass
 
+        # botones centrados en el area de juego
         btn_start = ttk.Button(self.root, text="Empezar", style="Custom.TButton", command=lambda: self._start_game(1))
         btn_how = ttk.Button(self.root, text="Cómo jugar", style="Custom.TButton", command=self._show_how_to)
         btn_exit = ttk.Button(self.root, text="Salir", style="Custom.TButton", command=self._on_close)
 
-        self.canvas.create_window(self.width//2, self.height//2 - 10, window=btn_start)
-        self.canvas.create_window(self.width//2, self.height//2 + 30, window=btn_how)
-        self.canvas.create_window(self.width//2, self.height//2 + 70, window=btn_exit)
+        # crear ventanas del canvas colocadas centradas en el área de juego
+        center_x = GAME_OFFSET + self.logic.width//2
+        self.canvas.create_window(center_x, self.height//2 - 10, window=btn_start)
+        self.canvas.create_window(center_x, self.height//2 + 30, window=btn_how)
+        self.canvas.create_window(center_x, self.height//2 + 70, window=btn_exit)
 
     def _show_how_to(self):
         self.canvas.delete("all")
@@ -136,23 +160,30 @@ class JuegoLadrillos(GameBase):
         self.canvas.delete("ball")
         self.canvas.delete("hud")
         st = self.logic.get_state()
+        # Dibujar bloques con offset en X
         for rect in st["blocks"]:
             x1,y1,x2,y2 = rect
-            self.canvas.create_rectangle(x1,y1,x2,y2, fill="skyblue", outline="white", tags="block")
+            self.canvas.create_rectangle(x1 + GAME_OFFSET, y1, x2 + GAME_OFFSET, y2,
+                                         fill="skyblue", outline="white", tags="block")
         px, py, pw, ph = st["paddle"]
-        self._paddle_item = self.canvas.create_rectangle(px - pw//2, py - ph//2,
-                                                         px + pw//2, py + ph//2,
-                                                         fill="white", tags="paddle")
+        # paleta con offset en X
+        self._paddle_item = self.canvas.create_rectangle(
+            px - pw//2 + GAME_OFFSET, py - ph//2,
+            px + pw//2 + GAME_OFFSET, py + ph//2,
+            fill="white", tags="paddle")
         bx, by, br = st["ball"]
-        self._ball_item = self.canvas.create_oval(bx-br, by-br, bx+br, by+br, fill="red", tags="ball")
-        self.canvas.create_text(10, 10, anchor="nw", text=f"Puntuación: {st['score']}", fill="white", font=("Arial", 14), tags="hud")
-        self.canvas.create_text(self.width - 110, 10, anchor="nw", text=f"Vidas: {st['lives']}", fill="white", font=("Arial", 14), tags="hud")
+        # bola con offset en X
+        self._ball_item = self.canvas.create_oval(
+            bx - br + GAME_OFFSET, by - br,
+            bx + br + GAME_OFFSET, by + br,
+            fill="red", tags="ball")
+        # HUD: puntuación a la izquierda del área, vidas a la derecha dentro del area de juego
+        self.canvas.create_text(GAME_OFFSET + 10, 10, anchor="nw", text=f"Puntuación: {st['score']}", fill="white", font=("Arial", 14), tags="hud")
+        self.canvas.create_text(GAME_OFFSET + self.logic.width - 110, 10, anchor="nw", text=f"Vidas: {st['lives']}", fill="white", font=("Arial", 14), tags="hud")
 
         # reservar área donde se pintará el video (panel dentro del canvas)
         vx, vy = VIDEO_POS
-        # dibujamos un rectángulo de fondo y un placeholder image id (se actualizará)
         self.canvas.create_rectangle(vx-2, vy-2, vx+VIDEO_W+2, vy+VIDEO_H+2, outline="white", tags="video_frame_bg")
-        # guardamos posición para el draw
         self._video_area_pos = (vx, vy)
 
     def _schedule_next_frame(self):
@@ -166,17 +197,21 @@ class JuegoLadrillos(GameBase):
         # actualizar video panel (si hay frame)
         self._draw_video_panel()
 
-        # redibujar bloques (simplificación: redibujamos todos)
+        # redibujar bloques (simplificación: redibujamos todos) con offset
         self.canvas.delete("block")
         for rect in st["blocks"]:
             x1,y1,x2,y2 = rect
-            self.canvas.create_rectangle(x1,y1,x2,y2, fill="skyblue", outline="white", tags="block")
+            self.canvas.create_rectangle(x1 + GAME_OFFSET, y1, x2 + GAME_OFFSET, y2, fill="skyblue", outline="white", tags="block")
 
-        # paleta y bola
+        # paleta y bola con offset en X
         px, py, pw, ph = st["paddle"]
-        self.canvas.coords(self._paddle_item, px - pw//2, py - ph//2, px + pw//2, py + ph//2)
+        self.canvas.coords(self._paddle_item,
+                           px - pw//2 + GAME_OFFSET, py - ph//2,
+                           px + pw//2 + GAME_OFFSET, py + ph//2)
         bx, by, br = st["ball"]
-        self.canvas.coords(self._ball_item, bx-br, by-br, bx+br, by+br)
+        self.canvas.coords(self._ball_item,
+                           bx - br + GAME_OFFSET, by - br,
+                           bx + br + GAME_OFFSET, by + br)
 
         # HUD
         self.canvas.delete("hud")
@@ -233,6 +268,50 @@ class JuegoLadrillos(GameBase):
     def _back_to_menu(self):
         self.canvas.delete("all")
         self._show_main_menu()
+    
+        # ------------------ implementaciones obligatorias (GameBase) ------------------
+    def on_hand_detected(self, letra, frame=None):
+        """
+        Implementación de la interfaz GameBase.
+        Puede ser llamada desde otros hilos; delegamos en el handler existente.
+        """
+        # delegar a nuestro handler robusto (acepta *args/**kwargs)
+        try:
+            # si viene desde hilo externo, reutilizamos el mismo flujo
+            self._on_hand_detected_event(letra, frame=frame)
+        except Exception:
+            # proteger contra errores en hilos externos
+            pass
+
+    def stop(self):
+        """
+        Parada ordenada: cancela el after loop, desuscribe handlers y cierra la ventana.
+        Puede llamarse desde el thread principal al cerrar la app o desde app.py.
+        """
+        # detener el loop scheduled
+        if getattr(self, "_job", None):
+            try:
+                self.root.after_cancel(self._job)
+            except Exception:
+                pass
+            self._job = None
+
+        # desuscribir handlers (seguro aunque ya lo hagas en _on_close)
+        try:
+            self.event_bus.unsubscribe("frame_captured", self._on_frame_event)
+        except Exception:
+            pass
+        try:
+            self.event_bus.unsubscribe("hand_detected", self._on_hand_detected_event)
+        except Exception:
+            pass
+
+        # destruir ventana si existe
+        try:
+            if self.root:
+                self.root.destroy()
+        except Exception:
+            pass
 
     # ---------- cierre ----------
     def _on_close(self):
