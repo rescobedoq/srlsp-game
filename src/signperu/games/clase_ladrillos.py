@@ -70,57 +70,58 @@ class ClaseLadrillos:
 
     def _generar_coordenadas(self, nivel:int):
         """
-        Recrea la lógica de generación de coordenadas que tenías en el script original.
-        Para simplicidad, vamos a crear filas y columnas y filtrar según patrones por nivel.
-        Mantengo formatos similares para usar tus formas.
+        Genera coordenadas de bloques escalables según el tamaño pedido (self.width/self.height).
+        Evita usar números mágicos fijos que rompen el layout en ventanas grandes/pequeñas.
         """
-        # Parámetros de grilla inspirados en código previo
-        cols = 23
-        rows = 15
-        cell_w = 30
-        cell_h = 25
+        # cell tamaño base (aprox); se adaptan para llenar el ancho disponible
+        base_cell_w = 30
+        base_cell_h = 25
+
+        # calcular columnas/filas máximas que caben en el área
+        cols = max(8, int((self.width - 40) // base_cell_w))   # dejar márgenes
+        rows = max(4, int((self.height - 140) // base_cell_h)) # dejar margen superior para UI/HUD
+
+        cell_w = max(20, int((self.width - 40) / cols))
+        cell_h = max(18, int((self.height - 120) / rows))
+
         start_x = 20
         start_y = 50
 
-        # construimos lista lineal de ids (1..rows*cols)
         allowed = set()
-        # nivel 1: una 'M' aproximada (simplificación)
+        # reproducir patrones por nivel pero ahora con indices dinámicos
         if nivel == 1:
-            # costados y diagonales
             for r in range(rows):
                 for c in range(cols):
                     idx = r * cols + c + 1
-                    # criterio simple: columnas 1..6 y 18..23 y diagonales centrales
-                    if c < 6 or c >= cols-6:
+                    # simular costados y centro
+                    if c < max(2, cols//6) or c >= cols - max(2, cols//6):
                         allowed.add(idx)
-                    # mediana central
-                    if c == cols//2 and r < 6:
+                    if c == cols//2 and r < max(3, rows//3):
                         allowed.add(idx)
-            # agregar un patrón M central
             center_col = cols//2
-            for r in range(0,6):
-                allowed.add(r*cols + (center_col - 3))
-                allowed.add(r*cols + (center_col + 3))
+            for r in range(0, min(6, rows)):
+                allowed.add(r*cols + max(1, center_col - 2))
+                allowed.add(r*cols + min(cols, center_col + 2))
         elif nivel == 2:
-            # flecha: un triángulo y un rectángulo central
-            for r in range(2,13,2):
-                span = r
-                offset = (cols - span) // 2
+            # flecha simple: gradientes centrados
+            for r in range(1, rows-1, max(1, rows//6)):
+                span = min(cols, 1 + 2*r//2)
+                offset = max(0, (cols - span) // 2)
                 for c in range(offset, offset+span):
-                    allowed.add((r)*cols + c + 1)
-            # rect central
-            for r in range(4,10):
-                for c in range((cols//2)-4, (cols//2)+5):
+                    allowed.add(r*cols + c + 1)
+            for r in range(max(1, rows//6), min(rows-1, rows//2)):
+                for c in range(max(0, cols//2-3), min(cols, cols//2+4)):
                     allowed.add(r*cols + c + 1)
         else:
-            # nivel 3: más denso con huecos para formar una figura aleatoria
+            # nivel 3: patrón densificado con huecos
             for r in range(rows):
                 for c in range(cols):
                     idx = r*cols + c + 1
                     if (r + c) % 2 == 0:
                         allowed.add(idx)
-            # añadir algunos agujeros
-            for a in range(0, len(allowed)//10):
+            # eliminar algunos para crear huecos
+            remove_n = max(1, len(allowed) // 12)
+            for _ in range(remove_n):
                 if allowed:
                     allowed.pop()
 
@@ -132,7 +133,7 @@ class ClaseLadrillos:
             x_cursor = start_x
             for c in range(cols):
                 if numero in allowed:
-                    x1 = x_cursor + 0
+                    x1 = x_cursor
                     x2 = x1 + (cell_w - 5)
                     coords.append((x1, y1, x2, y2))
                 x_cursor += cell_w
